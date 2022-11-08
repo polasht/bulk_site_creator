@@ -1,4 +1,3 @@
-site_name,site_address,rf_template_name
-Texas,"1100 Congress Ave, Austin, Texas 78701",basic_rf
-Nevada,"101 N Carson St, Carson City, NV 89701",
-Idaho,"700 W Jefferson St, Boise, ID 83702",basic_rf
+site_name,site_address,rf_template_name,spoke_template_name,network_template_name
+Walt_Disney_World,"1375 E Buena Vista Dr, Orlando, FL 32821",Master_US_RF_Template,Master_US_Spoke_DHCP,Master_US_Switch_Template_12T
+Roxy_Movie_Theatre,"2004 Main St, Northampton, PA 18067",Master_US_RF_Template,Master_US_Spoke_DHCP,Master_US_Switch_Template_12T

@@ -6,7 +6,7 @@
 #   google_api_key needs access to googlemaps geocode api as well as the timezone functions
 #
 # sites.csv which contains the following headers:
-#   site_name,site_address,site_groups,rf_template_id
+#   site_name,site_address,site_groups,rf_template_id,spoke_template_name,network_template_name
 
 import csv
 import requests
@@ -15,6 +15,7 @@ import os
 import config
 import time
 import json
+import sys
 
 os.environ['GOOGLE_API_KEY'] = config.google_api_key
 # module import needs to occur after setting os.environ variable
@@ -113,6 +114,47 @@ class Mist:
         """
         rf_templates = self.get_rf_templates()
         return next(item for item in rf_templates if item["name"] == rf_template_name)
+
+    # Added Nov 2022 - Fry
+    def get_spoke_templates(self):
+        """
+
+        :return: returns a list of dictionary gateway templates
+        """
+        gateway_templates = None
+        try:
+            gateway_templates = self.http_get(f"/api/v1/orgs/{self.mistAPI.org}/gatewaytemplates").json()
+        except Exception as e:
+            print(e)
+        return gateway_templates
+    def get_spoke_template_by_name(self, spoke_template_name: str):
+        """
+
+        :param spoke_template_name: Name of the WAN Edge SpokeTemplate
+        :return: gateway template dictionary
+        """
+        gateway_templates = self.get_spoke_templates()
+        return next(item for item in gateway_templates if item["name"] == spoke_template_name)
+
+    def get_network_template(self):
+        """
+
+        :return: returns a list of dictionary gateway templates
+        """
+        network_templates = None
+        try:
+            network_templates = self.http_get(f"/api/v1/orgs/{self.mistAPI.org}/networktemplates").json()
+        except Exception as e:
+            print(e)
+        return network_templates
+    def get_network_template_by_name(self, network_template_name: str):
+        """
+
+        :param network_template_name: Name of the Switch Template
+        :return: gateway template dictionary
+        """
+        network_templates = self.get_network_template()
+        return next(item for item in network_templates if item["name"] == network_template_name)
 
     def create_site(self, body):
         """
@@ -217,9 +259,20 @@ def main(argv):
             body = get_google_geoinfo(site['site_address'])
             body['name'] = site['site_name']
             body['timezone'] = get_google_timezone(body['latlng']['lat'], body['latlng']['lng'])
+            print('Checking for rf_template_name\n')
             if site['rf_template_name'] != "":
                 body['rftemplate_id'] = mist_connector.get_rftemplate_by_name(site['rf_template_name'])['id']
-            print(body)
+
+            print('Checking for spoke_template_name\n')
+            if site['spoke_template_name'] != "":
+                body['gatewaytemplate_id'] = mist_connector.get_spoke_template_by_name(site['spoke_template_name'])['id']
+
+            print('Checking for network_template_name\n')
+            if site['network_template_name'] != "":
+                body['networktemplate_id'] = mist_connector.get_network_template_by_name(site['network_template_name'])['id']
+
+            print(f'This is what we just generated for {site["site_name"]} \n{body}')
+
             results = mist_connector.create_site(body)
             if results.status_code == 200:
                 successful_sites.append(body)
@@ -246,6 +299,11 @@ def read_csv(filename):
     print(site_data)
     return site_data
 
+def time2pause():
+    stopprogram = input('Please hit enter to continue to \'q\' to quit: ')
+    if stopprogram == "q":
+        print('\nQuitting...')
+        sys.exit()
 
 if __name__ == '__main__':
     my_parser = get_parser()
