@@ -17,7 +17,10 @@ import time
 import json
 import sys
 
-os.environ['GOOGLE_API_KEY'] = config.google_api_key
+# This can be used if you do not want to hard-code your ENV API key
+#os.environ['GOOGLE_API_KEY'] = config.google_api_key
+
+
 # module import needs to occur after setting os.environ variable
 import geocoder
 
