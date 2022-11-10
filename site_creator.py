@@ -16,6 +16,8 @@ import config
 import time
 import json
 import sys
+from pprint import pprint
+from getpass import getuser
 
 # This can be used if you do not want to hard-code your ENV API key
 #os.environ['GOOGLE_API_KEY'] = config.google_api_key
@@ -23,6 +25,7 @@ import sys
 
 # module import needs to occur after setting os.environ variable
 import geocoder
+
 
 
 class MistAPI(object):
@@ -159,6 +162,25 @@ class Mist:
         network_templates = self.get_network_template()
         return next(item for item in network_templates if item["name"] == network_template_name)
 
+    def get_site_information(self):
+        """
+        :return: returns a list of dictionary of the sites
+        """
+        network_sites = None
+        try:
+            network_sites = self.http_get(f"/api/v1/orgs/{self.mistAPI.org}/sites").json()
+        except Exception as e:
+            print(e)
+        return network_sites
+
+    def get_site_by_name(self, network_site: str):
+        """
+
+        :param network_site: This is the name of the site that we just created
+        :return: return site id
+        """
+        network_sites = self.get_site_information()
+        return next(item for item in network_sites if item["name"] == network_site)
     def create_site(self, body):
         """
 
@@ -168,6 +190,12 @@ class Mist:
         response = self.http_post(f"/api/v1/orgs/{self.mistAPI.org}/sites", body)
         return response
 
+def get_site_vars(network_vars):
+    with open(network_vars, 'r') as _json_file:
+        site_vars = json.load(_json_file)
+    #pprint(site_vars)
+    #time2pause()
+    return(site_vars)
 
 def get_parser():
     """
@@ -240,6 +268,7 @@ def get_google_geoinfo(address: str):
 def main(argv):
     successful_sites = []
     failed_sites = []
+    created_site_id = []
     mist_api_key = argv.mist_api_key
     org = argv.mist_org
     if argv.mist_europe is not None:
@@ -274,7 +303,16 @@ def main(argv):
             if site['network_template_name'] != "":
                 body['networktemplate_id'] = mist_connector.get_network_template_by_name(site['network_template_name'])['id']
 
-            print(f'This is what we just generated for {site["site_name"]} \n{body}')
+            print(f'Checking for site variables \n - {site["network_vars"]}')
+            if site['network_vars'] != None:
+                body['vars'] = get_site_vars((site['network_vars']))
+
+
+            body['notes'] = f'Added by {getuser()} using site_creator script.\n'
+
+            #pprint(f'This is what we just generated for {site["site_name"]} \n')
+            #_body_data = json.dumps(body, indent=2)
+            #time2pause()
 
             results = mist_connector.create_site(body)
             if results.status_code == 200:
@@ -282,12 +320,21 @@ def main(argv):
             else:
                 failed_sites.append(body)
 
+            print('Checking to see what ID was created\n')
+            new_site_id = mist_connector.get_site_by_name(site['site_name'])['id']
+            print(new_site_id)
+            created_site_id.append(f'{site["site_name"]} has ID {new_site_id}\n')
+            #time2pause()
+
         print("Successful sites: ")
         for site in successful_sites:
             print(site['name'])
         print("Failed Sites: ")
         for site in failed_sites:
             print(site['name'])
+
+        for _site_ids in created_site_id:
+            print(_site_ids)
 
 
 def read_csv(filename):
