@@ -23,14 +23,12 @@ This is a fork of the Jake Synder's script that can be found at:
 
 https://github.com/jsnyder-juniper/bulk_site_creator
 
-
 ### Update November 2022
 
 Added the ability to push wan edge and network templates as part of the CSV - Fry
 
-
+Added the ability to push variables for newly created site - see Roxy_Movie_Theatre.vars for format - this is a JSON file
 
 ### Currently working on (Nov 2022)
 
-- Adding site vars as part of build via json file
 - Adding aptemplates, secpolicy, alarmtemp, and sitetemples

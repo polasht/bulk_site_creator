@@ -20,7 +20,7 @@ from pprint import pprint
 from getpass import getuser
 
 # This can be used if you do not want to hard-code your ENV API key
-#os.environ['GOOGLE_API_KEY'] = config.google_api_key
+os.environ['GOOGLE_API_KEY'] = config.google_api_key
 
 
 # module import needs to occur after setting os.environ variable
@@ -33,7 +33,6 @@ class MistAPI(object):
         self.host = host
         self.org = org
         self.header = ""
-
 
 class MistAPIToken(MistAPI):
     def __init__(self, host: str, org: str, mist_api_token: str):
@@ -87,6 +86,21 @@ class Mist:
             print(e)
         return response
 
+    def http_put(self, url: str, body: dict):
+        """
+
+        :param url: url extension.  Example: /api/v1/self
+        :param body: dictionary formatted body for a post
+        :return:
+        """
+        response = None
+        try:
+            header = {**{"content-type": "application/json"}, **self.mistAPI.header}
+            my_url = f"https://{self.mistAPI.host}{url}"
+            response = requests.put(my_url, headers=header, data=json.dumps(body))
+        except Exception as e:
+            print(e)
+        return response
     def verify_self(self):
         """
 
@@ -181,6 +195,7 @@ class Mist:
         """
         network_sites = self.get_site_information()
         return next(item for item in network_sites if item["name"] == network_site)
+
     def create_site(self, body):
         """
 
@@ -188,6 +203,15 @@ class Mist:
         :return: requests response object
         """
         response = self.http_post(f"/api/v1/orgs/{self.mistAPI.org}/sites", body)
+        return response
+
+    def update_site_vars(self, site_body, new_site_id):
+        """
+
+        :param body: properly formatted body for a site creation
+        :return: requests response object
+        """
+        response = self.http_put(f"/api/v1/sites/{new_site_id}/setting", site_body)
         return response
 
 def get_site_vars(network_vars):
@@ -288,6 +312,7 @@ def main(argv):
     if api_verify:
 
         for site in site_data:
+            site_body = {}
             body = get_google_geoinfo(site['site_address'])
             body['name'] = site['site_name']
             body['timezone'] = get_google_timezone(body['latlng']['lat'], body['latlng']['lng'])
@@ -303,10 +328,6 @@ def main(argv):
             if site['network_template_name'] != "":
                 body['networktemplate_id'] = mist_connector.get_network_template_by_name(site['network_template_name'])['id']
 
-            print(f'Checking for site variables \n - {site["network_vars"]}')
-            if site['network_vars'] != None:
-                body['vars'] = get_site_vars((site['network_vars']))
-
 
             body['notes'] = f'Added by {getuser()} using site_creator script.\n'
 
@@ -320,9 +341,24 @@ def main(argv):
             else:
                 failed_sites.append(body)
 
+            # Checking for site variables and adding them to the site config
+
             print('Checking to see what ID was created\n')
             new_site_id = mist_connector.get_site_by_name(site['site_name'])['id']
-            print(new_site_id)
+            # print(new_site_id)
+
+            print(f'Checking for site variables \n - {site["network_vars"]}')
+            if site['network_vars'] != None:
+                site_body['vars'] = get_site_vars((site['network_vars']))
+                pprint(site_body['vars'])
+
+            print('We are here...')
+
+
+            results = mist_connector.update_site_vars(site_body,new_site_id)
+            print(results)
+
+
             created_site_id.append(f'{site["site_name"]} has ID {new_site_id}\n')
             #time2pause()
 
@@ -336,6 +372,9 @@ def main(argv):
         for _site_ids in created_site_id:
             print(_site_ids)
 
+    else:
+        print('Check API Key - key did not verify.\n')
+
 
 def read_csv(filename):
     """
@@ -346,7 +385,7 @@ def read_csv(filename):
     with open(filename) as csv_file:
         reader = csv.DictReader(csv_file)
         site_data = [record for record in reader]
-    print(site_data)
+    #print(site_data)
     return site_data
 
 def time2pause():
