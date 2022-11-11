@@ -101,6 +101,7 @@ class Mist:
         except Exception as e:
             print(e)
         return response
+
     def verify_self(self):
         """
 
@@ -147,6 +148,7 @@ class Mist:
         except Exception as e:
             print(e)
         return gateway_templates
+
     def get_spoke_template_by_name(self, spoke_template_name: str):
         """
 
@@ -167,6 +169,7 @@ class Mist:
         except Exception as e:
             print(e)
         return network_templates
+
     def get_network_template_by_name(self, network_template_name: str):
         """
 
