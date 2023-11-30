@@ -1,0 +1,2 @@
+site_name,site_address,rf_template_name,network_template_name,network_vars
+GVSU_Test,"1 Campus Dr, Allendale MI 49401",Mist_Suggested_Campus,EX-4400,Test.json

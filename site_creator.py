@@ -302,7 +302,7 @@ def main(argv):
         host = "api.eu.mist.com"
     else:
         host = "api.mist.com"
-    site_data = read_csv("sites.csv")
+    site_data = read_csv("gvsu_sites.csv")
 
     # mist_api = MistAPIToken(host, mist_api_key)
     mist_api = MistAPIToken(host, org, mist_api_key)
